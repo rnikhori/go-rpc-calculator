@@ -1,0 +1,56 @@
+package calculator
+
+import "testing"
+
+func TestAdd(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Add(Args{A: 2, B: 3}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 5 {
+		t.Errorf("Add(2, 3) = %v, want 5", reply)
+	}
+}
+
+func TestSubtract(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Subtract(Args{A: 5, B: 3}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 2 {
+		t.Errorf("Subtract(5, 3) = %v, want 2", reply)
+	}
+}
+
+func TestMultiply(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Multiply(Args{A: 4, B: 3}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 12 {
+		t.Errorf("Multiply(4, 3) = %v, want 12", reply)
+	}
+}
+
+func TestDivide(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Divide(Args{A: 10, B: 2}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 5 {
+		t.Errorf("Divide(10, 2) = %v, want 5", reply)
+	}
+}
+
+func TestDivideByZero(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	err := c.Divide(Args{A: 10, B: 0}, &reply)
+	if err == nil {
+		t.Fatal("expected error for division by zero, got nil")
+	}
+}
