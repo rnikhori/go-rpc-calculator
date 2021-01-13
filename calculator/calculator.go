@@ -2,6 +2,8 @@ package calculator
 
 import "errors"
 
+var ErrDivideByZero = errors.New("division by zero")
+
 type Args struct {
 	A float64
 	B float64
@@ -26,7 +28,7 @@ func (c *Calculator) Multiply(args Args, reply *float64) error {
 
 func (c *Calculator) Divide(args Args, reply *float64) error {
 	if args.B == 0 {
-		return errors.New("division by zero")
+		return ErrDivideByZero
 	}
 	*reply = args.A / args.B
 	return nil
