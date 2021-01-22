@@ -46,6 +46,17 @@ func TestDivide(t *testing.T) {
 	}
 }
 
+func TestPower(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Power(Args{A: 2, B: 10}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 1024 {
+		t.Errorf("Power(2, 10) = %v, want 1024", reply)
+	}
+}
+
 func TestDivideByZero(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
