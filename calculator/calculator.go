@@ -5,7 +5,10 @@ import (
 	"math"
 )
 
-var ErrDivideByZero = errors.New("division by zero")
+var (
+	ErrDivideByZero = errors.New("division by zero")
+	ErrNegativeSqrt = errors.New("square root of negative number")
+)
 
 type Args struct {
 	A float64
@@ -39,5 +42,13 @@ func (c *Calculator) Divide(args Args, reply *float64) error {
 
 func (c *Calculator) Power(args Args, reply *float64) error {
 	*reply = math.Pow(args.A, args.B)
+	return nil
+}
+
+func (c *Calculator) Sqrt(args Args, reply *float64) error {
+	if args.A < 0 {
+		return ErrNegativeSqrt
+	}
+	*reply = math.Sqrt(args.A)
 	return nil
 }

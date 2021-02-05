@@ -1,6 +1,9 @@
 package calculator
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestAdd(t *testing.T) {
 	c := &Calculator{}
@@ -54,6 +57,26 @@ func TestPower(t *testing.T) {
 	}
 	if reply != 1024 {
 		t.Errorf("Power(2, 10) = %v, want 1024", reply)
+	}
+}
+
+func TestSqrt(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Sqrt(Args{A: 9}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 3 {
+		t.Errorf("Sqrt(9) = %v, want 3", reply)
+	}
+}
+
+func TestSqrtNegative(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	err := c.Sqrt(Args{A: -4}, &reply)
+	if !errors.Is(err, ErrNegativeSqrt) {
+		t.Fatalf("Sqrt(-4) error = %v, want ErrNegativeSqrt", err)
 	}
 }
 
