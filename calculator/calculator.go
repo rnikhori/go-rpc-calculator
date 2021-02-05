@@ -8,6 +8,7 @@ import (
 var (
 	ErrDivideByZero = errors.New("division by zero")
 	ErrNegativeSqrt = errors.New("square root of negative number")
+	ErrModuloByZero = errors.New("modulo by zero")
 )
 
 type Args struct {
@@ -50,5 +51,13 @@ func (c *Calculator) Sqrt(args Args, reply *float64) error {
 		return ErrNegativeSqrt
 	}
 	*reply = math.Sqrt(args.A)
+	return nil
+}
+
+func (c *Calculator) Modulo(args Args, reply *float64) error {
+	if args.B == 0 {
+		return ErrModuloByZero
+	}
+	*reply = math.Mod(args.A, args.B)
 	return nil
 }

@@ -80,6 +80,26 @@ func TestSqrtNegative(t *testing.T) {
 	}
 }
 
+func TestModulo(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Modulo(Args{A: 10, B: 3}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 1 {
+		t.Errorf("Modulo(10, 3) = %v, want 1", reply)
+	}
+}
+
+func TestModuloByZero(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	err := c.Modulo(Args{A: 10, B: 0}, &reply)
+	if !errors.Is(err, ErrModuloByZero) {
+		t.Fatalf("Modulo(10, 0) error = %v, want ErrModuloByZero", err)
+	}
+}
+
 func TestDivideByZero(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
