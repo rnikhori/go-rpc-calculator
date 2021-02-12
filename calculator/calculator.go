@@ -61,3 +61,8 @@ func (c *Calculator) Modulo(args Args, reply *float64) error {
 	*reply = math.Mod(args.A, args.B)
 	return nil
 }
+
+func (c *Calculator) Negate(args Args, reply *float64) error {
+	*reply = -args.A
+	return nil
+}

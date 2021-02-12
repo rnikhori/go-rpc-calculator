@@ -100,6 +100,23 @@ func TestModuloByZero(t *testing.T) {
 	}
 }
 
+func TestNegate(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Negate(Args{A: 7}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != -7 {
+		t.Errorf("Negate(7) = %v, want -7", reply)
+	}
+	if err := c.Negate(Args{A: -7}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 7 {
+		t.Errorf("Negate(-7) = %v, want 7", reply)
+	}
+}
+
 func TestDivideByZero(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
