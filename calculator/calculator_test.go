@@ -117,6 +117,15 @@ func TestNegate(t *testing.T) {
 	}
 }
 
+func BenchmarkMultiply(b *testing.B) {
+	c := &Calculator{}
+	var reply float64
+	args := Args{A: 7, B: 6}
+	for i := 0; i < b.N; i++ {
+		_ = c.Multiply(args, &reply)
+	}
+}
+
 func TestDivideByZero(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
