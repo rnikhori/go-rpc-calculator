@@ -29,6 +29,10 @@ type HistoryEntry struct {
 	Time   time.Time
 }
 
+type HistoryArgs struct {
+	Limit int
+}
+
 type Calculator struct {
 	mu         sync.Mutex
 	history    []HistoryEntry
@@ -52,6 +56,21 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 	if len(c.history) > max {
 		c.history = c.history[len(c.history)-max:]
 	}
+}
+
+func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	n := len(c.history)
+	limit := args.Limit
+	if limit <= 0 || limit > n {
+		limit = n
+	}
+	result := make([]HistoryEntry, limit)
+	copy(result, c.history[n-limit:])
+	*reply = result
+	return nil
 }
 
 func (c *Calculator) Add(args Args, reply *float64) error {
