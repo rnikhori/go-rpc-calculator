@@ -117,6 +117,69 @@ func TestNegate(t *testing.T) {
 	}
 }
 
+func TestGetHistoryRecordsOperations(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	if err := c.Add(Args{A: 1, B: 2}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := c.Divide(Args{A: 1, B: 0}, &reply); !errors.Is(err, ErrDivideByZero) {
+		t.Fatalf("Divide(1, 0) error = %v, want ErrDivideByZero", err)
+	}
+
+	var history []HistoryEntry
+	if err := c.GetHistory(HistoryArgs{}, &history); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(history) != 2 {
+		t.Fatalf("len(history) = %d, want 2", len(history))
+	}
+	if history[0].Op != "Add" || history[0].Result != 3 || history[0].Err != "" {
+		t.Errorf("history[0] = %+v, want Add with result 3 and no error", history[0])
+	}
+	if history[1].Op != "Divide" || history[1].Err != ErrDivideByZero.Error() {
+		t.Errorf("history[1] = %+v, want Divide with ErrDivideByZero", history[1])
+	}
+}
+
+func TestGetHistoryRespectsLimit(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	for i := 0; i < 5; i++ {
+		_ = c.Add(Args{A: float64(i), B: 1}, &reply)
+	}
+
+	var history []HistoryEntry
+	if err := c.GetHistory(HistoryArgs{Limit: 2}, &history); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(history) != 2 {
+		t.Fatalf("len(history) = %d, want 2", len(history))
+	}
+	if history[0].A != 3 || history[1].A != 4 {
+		t.Errorf("history = %+v, want the two most recent entries", history)
+	}
+}
+
+func TestHistoryTrimsToMaxSize(t *testing.T) {
+	c := &Calculator{maxHistory: 3}
+	var reply float64
+	for i := 0; i < 10; i++ {
+		_ = c.Add(Args{A: float64(i), B: 0}, &reply)
+	}
+
+	var history []HistoryEntry
+	if err := c.GetHistory(HistoryArgs{}, &history); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(history) != 3 {
+		t.Fatalf("len(history) = %d, want 3 (trimmed to maxHistory)", len(history))
+	}
+	if history[0].A != 7 || history[2].A != 9 {
+		t.Errorf("history = %+v, want the 3 most recent entries", history)
+	}
+}
+
 func BenchmarkMultiply(b *testing.B) {
 	c := &Calculator{}
 	var reply float64
