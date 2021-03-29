@@ -14,8 +14,13 @@ A simple calculator service exposed over Go's `net/rpc`.
 | `Calculator.Sqrt`     | A           | errors with `ErrNegativeSqrt` if A is negative |
 | `Calculator.Modulo`   | A, B        | errors with `ErrModuloByZero` if B is 0   |
 | `Calculator.Negate`   | A           | returns -A                                |
+| `Calculator.GetHistory` | Limit (optional) | returns the most recent `Limit` operations (or all retained if `Limit` <= 0) |
 
-All methods take a `calculator.Args{A, B float64}` struct and return a `float64` reply. Methods that only need one operand (`Sqrt`, `Negate`) ignore `B`.
+All arithmetic methods take a `calculator.Args{A, B float64}` struct and return a `float64` reply. Methods that only need one operand (`Sqrt`, `Negate`) ignore `B`.
+
+## History
+
+Every call to an arithmetic method is recorded as a `calculator.HistoryEntry` (operation name, operands, result, error if any, and timestamp). The server keeps the most recent entries, up to a fixed size, and discards older ones once that size is exceeded. Call `Calculator.GetHistory` with a `calculator.HistoryArgs{Limit: n}` to retrieve up to `n` of the most recent entries.
 
 ## Build
 
