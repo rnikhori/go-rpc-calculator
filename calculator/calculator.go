@@ -37,6 +37,7 @@ type Calculator struct {
 	mu         sync.Mutex
 	history    []HistoryEntry
 	maxHistory int
+	opCounts   map[string]uint64
 }
 
 func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
@@ -56,6 +57,11 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 	if len(c.history) > max {
 		c.history = c.history[len(c.history)-max:]
 	}
+
+	if c.opCounts == nil {
+		c.opCounts = make(map[string]uint64)
+	}
+	c.opCounts[op]++
 }
 
 func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
