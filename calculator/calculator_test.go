@@ -180,6 +180,28 @@ func TestHistoryTrimsToMaxSize(t *testing.T) {
 	}
 }
 
+func TestStatsTracksCountsPerOperation(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+	_ = c.Add(Args{A: 1, B: 1}, &reply)
+	_ = c.Add(Args{A: 2, B: 2}, &reply)
+	_ = c.Subtract(Args{A: 3, B: 1}, &reply)
+
+	var stats Stats
+	if err := c.Stats(struct{}{}, &stats); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if stats.Total != 3 {
+		t.Errorf("stats.Total = %d, want 3", stats.Total)
+	}
+	if stats.Counts["Add"] != 2 {
+		t.Errorf("stats.Counts[Add] = %d, want 2", stats.Counts["Add"])
+	}
+	if stats.Counts["Subtract"] != 1 {
+		t.Errorf("stats.Counts[Subtract] = %d, want 1", stats.Counts["Subtract"])
+	}
+}
+
 func BenchmarkMultiply(b *testing.B) {
 	c := &Calculator{}
 	var reply float64

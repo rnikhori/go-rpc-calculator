@@ -33,6 +33,11 @@ type HistoryArgs struct {
 	Limit int
 }
 
+type Stats struct {
+	Counts map[string]uint64
+	Total  uint64
+}
+
 type Calculator struct {
 	mu         sync.Mutex
 	history    []HistoryEntry
@@ -76,6 +81,20 @@ func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
 	result := make([]HistoryEntry, limit)
 	copy(result, c.history[n-limit:])
 	*reply = result
+	return nil
+}
+
+func (c *Calculator) Stats(args struct{}, reply *Stats) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	counts := make(map[string]uint64, len(c.opCounts))
+	var total uint64
+	for op, n := range c.opCounts {
+		counts[op] = n
+		total += n
+	}
+	*reply = Stats{Counts: counts, Total: total}
 	return nil
 }
 
