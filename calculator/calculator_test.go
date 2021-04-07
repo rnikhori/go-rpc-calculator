@@ -2,6 +2,7 @@ package calculator
 
 import (
 	"errors"
+	"sync"
 	"testing"
 )
 
@@ -199,6 +200,37 @@ func TestStatsTracksCountsPerOperation(t *testing.T) {
 	}
 	if stats.Counts["Subtract"] != 1 {
 		t.Errorf("stats.Counts[Subtract] = %d, want 1", stats.Counts["Subtract"])
+	}
+}
+
+func TestStatsIsConcurrencySafe(t *testing.T) {
+	c := &Calculator{}
+	const goroutines = 50
+	const callsEach = 100
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func() {
+			defer wg.Done()
+			var reply float64
+			for j := 0; j < callsEach; j++ {
+				_ = c.Add(Args{A: 1, B: 1}, &reply)
+			}
+		}()
+	}
+	wg.Wait()
+
+	var stats Stats
+	if err := c.Stats(struct{}{}, &stats); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := uint64(goroutines * callsEach)
+	if stats.Total != want {
+		t.Errorf("stats.Total = %d, want %d", stats.Total, want)
+	}
+	if stats.Counts["Add"] != want {
+		t.Errorf("stats.Counts[Add] = %d, want %d", stats.Counts["Add"], want)
 	}
 }
 
