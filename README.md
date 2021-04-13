@@ -15,8 +15,15 @@ A simple calculator service exposed over Go's `net/rpc`.
 | `Calculator.Modulo`   | A, B        | errors with `ErrModuloByZero` if B is 0   |
 | `Calculator.Negate`   | A           | returns -A                                |
 | `Calculator.GetHistory` | Limit (optional) | returns the most recent `Limit` operations (or all retained if `Limit` <= 0) |
+| `Calculator.Stats`    | none        | returns per-operation call counts and the total operations served |
 
 All arithmetic methods take a `calculator.Args{A, B float64}` struct and return a `float64` reply. Methods that only need one operand (`Sqrt`, `Negate`) ignore `B`.
+
+## History
+
+## Stats
+
+The server keeps a running, concurrency-safe count of how many times each operation has been called. Call `Calculator.Stats` with an empty args struct to get back a `calculator.Stats{Counts map[string]uint64, Total uint64}` snapshot.
 
 ## History
 
