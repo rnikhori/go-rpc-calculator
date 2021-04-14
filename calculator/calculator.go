@@ -2,6 +2,7 @@ package calculator
 
 import (
 	"errors"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -43,6 +44,11 @@ type Calculator struct {
 	history    []HistoryEntry
 	maxHistory int
 	opCounts   map[string]uint64
+	logger     *log.Logger
+}
+
+func NewCalculator(logger *log.Logger, maxHistory int) *Calculator {
+	return &Calculator{logger: logger, maxHistory: maxHistory}
 }
 
 func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
