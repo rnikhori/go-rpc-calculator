@@ -1,7 +1,10 @@
 package calculator
 
 import (
+	"bytes"
 	"errors"
+	"log"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -231,6 +234,28 @@ func TestStatsIsConcurrencySafe(t *testing.T) {
 	}
 	if stats.Counts["Add"] != want {
 		t.Errorf("stats.Counts[Add] = %d, want %d", stats.Counts["Add"], want)
+	}
+}
+
+func TestNewCalculatorLogsOperations(t *testing.T) {
+	var buf bytes.Buffer
+	logger := log.New(&buf, "", 0)
+	c := NewCalculator(logger, 0)
+
+	var reply float64
+	if err := c.Add(Args{A: 1, B: 2}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(buf.String(), "Add(1, 2) = 3") {
+		t.Errorf("log output = %q, want it to contain %q", buf.String(), "Add(1, 2) = 3")
+	}
+
+	buf.Reset()
+	if err := c.Divide(Args{A: 1, B: 0}, &reply); !errors.Is(err, ErrDivideByZero) {
+		t.Fatalf("Divide(1, 0) error = %v, want ErrDivideByZero", err)
+	}
+	if !strings.Contains(buf.String(), "Divide(1, 0) error") {
+		t.Errorf("log output = %q, want it to mention the Divide error", buf.String())
 	}
 }
 

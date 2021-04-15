@@ -73,6 +73,14 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 		c.opCounts = make(map[string]uint64)
 	}
 	c.opCounts[op]++
+
+	if c.logger != nil {
+		if err != nil {
+			c.logger.Printf("%s(%v, %v) error: %v", op, a, b, err)
+		} else {
+			c.logger.Printf("%s(%v, %v) = %v", op, a, b, result)
+		}
+	}
 }
 
 func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
