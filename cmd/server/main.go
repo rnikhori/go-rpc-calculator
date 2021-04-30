@@ -8,8 +8,11 @@ import (
 	"github.com/rnikhori/go-rpc-calculator/calculator"
 )
 
+const defaultMaxHistory = 100
+
 func main() {
-	if err := rpc.Register(new(calculator.Calculator)); err != nil {
+	calc := calculator.NewCalculator(log.Default(), defaultMaxHistory)
+	if err := rpc.Register(calc); err != nil {
 		log.Fatal("register error:", err)
 	}
 
