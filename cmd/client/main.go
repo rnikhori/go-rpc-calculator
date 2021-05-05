@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net/rpc"
 
@@ -8,7 +10,12 @@ import (
 )
 
 func main() {
-	client, err := rpc.Dial("tcp", "localhost:1234")
+	host := flag.String("host", "localhost", "server host to connect to")
+	port := flag.Int("port", 1234, "server port to connect to")
+	flag.Parse()
+
+	addr := fmt.Sprintf("%s:%d", *host, *port)
+	client, err := rpc.Dial("tcp", addr)
 	if err != nil {
 		log.Fatal("dial error:", err)
 	}
