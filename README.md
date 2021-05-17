@@ -19,8 +19,6 @@ A simple calculator service exposed over Go's `net/rpc`.
 
 All arithmetic methods take a `calculator.Args{A, B float64}` struct and return a `float64` reply. Methods that only need one operand (`Sqrt`, `Negate`) ignore `B`.
 
-## History
-
 ## Stats
 
 The server keeps a running, concurrency-safe count of how many times each operation has been called. Call `Calculator.Stats` with an empty args struct to get back a `calculator.Stats{Counts map[string]uint64, Total uint64}` snapshot.
@@ -50,3 +48,17 @@ go run ./cmd/client
 ```
 
 The client connects to `localhost:1234` and prints the result of each operation.
+
+## Flags
+
+| Flag    | Binary          | Default     | Description                     |
+|---------|-----------------|-------------|----------------------------------|
+| `-host` | server, client  | `` (server, all interfaces) / `localhost` (client) | host/interface to bind or connect to |
+| `-port` | server, client  | `1234`      | TCP port to listen on or connect to |
+
+Example running both on a non-default port:
+
+```sh
+go run ./cmd/server -port 5000
+go run ./cmd/client -port 5000
+```
