@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/rpc"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/rnikhori/go-rpc-calculator/calculator"
 )
@@ -27,15 +31,29 @@ func main() {
 	if err != nil {
 		log.Fatal("listen error:", err)
 	}
-	defer listener.Close()
 
 	log.Printf("calculator RPC server listening on %s\n", listener.Addr())
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		log.Println("shutdown signal received, closing listener")
+		listener.Close()
+	}()
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println("accept error:", err)
-			continue
+			select {
+			case <-ctx.Done():
+				log.Println("server stopped accepting connections, shutting down")
+				return
+			default:
+				log.Println("accept error:", err)
+				continue
+			}
 		}
 		go rpc.ServeConn(conn)
 	}
