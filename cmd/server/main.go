@@ -9,6 +9,7 @@ import (
 	"net/rpc"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/rnikhori/go-rpc-calculator/calculator"
@@ -43,18 +44,25 @@ func main() {
 		listener.Close()
 	}()
 
+	var conns sync.WaitGroup
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			select {
 			case <-ctx.Done():
-				log.Println("server stopped accepting connections, shutting down")
+				log.Println("waiting for in-flight connections to finish")
+				conns.Wait()
+				log.Println("server shut down")
 				return
 			default:
 				log.Println("accept error:", err)
 				continue
 			}
 		}
-		go rpc.ServeConn(conn)
+		conns.Add(1)
+		go func() {
+			defer conns.Done()
+			rpc.ServeConn(conn)
+		}()
 	}
 }
