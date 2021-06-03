@@ -49,6 +49,10 @@ go run ./cmd/client
 
 The client connects to `localhost:1234` and prints the result of each operation.
 
+## Graceful shutdown
+
+The server stops accepting new connections on SIGINT (Ctrl+C) or SIGTERM, closes its listener, and waits for any in-flight requests to finish being served before the process exits.
+
 ## Flags
 
 | Flag    | Binary          | Default     | Description                     |
