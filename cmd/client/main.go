@@ -20,6 +20,11 @@ var binaryOps = map[string]string{
 	"modulo":   "Calculator.Modulo",
 }
 
+var unaryOps = map[string]string{
+	"sqrt":   "Calculator.Sqrt",
+	"negate": "Calculator.Negate",
+}
+
 func main() {
 	host := flag.String("host", "localhost", "server host to connect to")
 	port := flag.Int("port", 1234, "server port to connect to")
@@ -45,9 +50,21 @@ func main() {
 
 func runOp(client *rpc.Client, args []string) error {
 	op := strings.ToLower(args[0])
+
+	if method, ok := unaryOps[op]; ok {
+		if len(args) != 2 {
+			return fmt.Errorf("usage: client %s <a>", op)
+		}
+		a, err := strconv.ParseFloat(args[1], 64)
+		if err != nil {
+			return fmt.Errorf("invalid operand %q: %w", args[1], err)
+		}
+		return callAndPrint(client, method, op, calculator.Args{A: a})
+	}
+
 	method, ok := binaryOps[op]
 	if !ok {
-		return fmt.Errorf("unknown operation %q", args[0])
+		return fmt.Errorf("unknown operation %q\n%s", args[0], usage())
 	}
 	if len(args) != 3 {
 		return fmt.Errorf("usage: client %s <a> <b>", op)
@@ -62,12 +79,20 @@ func runOp(client *rpc.Client, args []string) error {
 		return fmt.Errorf("invalid operand %q: %w", args[2], err)
 	}
 
+	return callAndPrint(client, method, op, calculator.Args{A: a, B: b})
+}
+
+func callAndPrint(client *rpc.Client, method, op string, args calculator.Args) error {
 	var reply float64
-	if err := client.Call(method, calculator.Args{A: a, B: b}, &reply); err != nil {
+	if err := client.Call(method, args, &reply); err != nil {
 		return fmt.Errorf("%s error: %w", op, err)
 	}
 	fmt.Println(reply)
 	return nil
+}
+
+func usage() string {
+	return "supported operations: add, subtract, multiply, divide, power, modulo (require <a> <b>); sqrt, negate (require <a>)"
 }
 
 func runDemo(client *rpc.Client) {
