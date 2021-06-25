@@ -7,6 +7,7 @@ import (
 	"net/rpc"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rnikhori/go-rpc-calculator/calculator"
 )
@@ -43,9 +44,45 @@ func main() {
 		return
 	}
 
+	if strings.ToLower(rest[0]) == "history" {
+		if err := runHistory(client, rest[1:]); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
 	if err := runOp(client, rest); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func runHistory(client *rpc.Client, args []string) error {
+	limit := 0
+	if len(args) > 0 {
+		n, err := strconv.Atoi(args[0])
+		if err != nil {
+			return fmt.Errorf("invalid history limit %q: %w", args[0], err)
+		}
+		limit = n
+	}
+
+	var history []calculator.HistoryEntry
+	if err := client.Call("Calculator.GetHistory", calculator.HistoryArgs{Limit: limit}, &history); err != nil {
+		return fmt.Errorf("history error: %w", err)
+	}
+
+	if len(history) == 0 {
+		fmt.Println("no history recorded")
+		return nil
+	}
+	for _, entry := range history {
+		status := "ok"
+		if entry.Err != "" {
+			status = entry.Err
+		}
+		fmt.Printf("%s  %s(%v, %v) = %v  [%s]\n", entry.Time.Format(time.RFC3339), entry.Op, entry.A, entry.B, entry.Result, status)
+	}
+	return nil
 }
 
 func runOp(client *rpc.Client, args []string) error {
