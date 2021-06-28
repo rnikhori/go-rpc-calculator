@@ -44,8 +44,14 @@ func main() {
 		return
 	}
 
-	if strings.ToLower(rest[0]) == "history" {
+	switch strings.ToLower(rest[0]) {
+	case "history":
 		if err := runHistory(client, rest[1:]); err != nil {
+			log.Fatal(err)
+		}
+		return
+	case "stats":
+		if err := runStats(client); err != nil {
 			log.Fatal(err)
 		}
 		return
@@ -54,6 +60,19 @@ func main() {
 	if err := runOp(client, rest); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func runStats(client *rpc.Client) error {
+	var stats calculator.Stats
+	if err := client.Call("Calculator.Stats", struct{}{}, &stats); err != nil {
+		return fmt.Errorf("stats error: %w", err)
+	}
+
+	fmt.Printf("total operations: %d\n", stats.Total)
+	for op, n := range stats.Counts {
+		fmt.Printf("  %s: %d\n", op, n)
+	}
+	return nil
 }
 
 func runHistory(client *rpc.Client, args []string) error {
