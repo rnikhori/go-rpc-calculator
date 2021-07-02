@@ -47,7 +47,21 @@ In a second terminal, run the client:
 go run ./cmd/client
 ```
 
-The client connects to `localhost:1234` and prints the result of each operation.
+Running the client with no arguments connects to `localhost:1234` and runs a fixed demo sequence (Add, Subtract, Multiply, Divide on 10 and 3).
+
+## Client CLI usage
+
+Pass an operation name and its operands to call that RPC method directly and print only the result:
+
+```sh
+go run ./cmd/client add 10 3        # binary ops: add, subtract, multiply, divide, power, modulo
+go run ./cmd/client sqrt 9          # unary ops: sqrt, negate
+go run ./cmd/client negate 5
+go run ./cmd/client history 5       # print the 5 most recent operations recorded by the server
+go run ./cmd/client stats           # print total and per-operation call counts
+```
+
+An unknown operation name prints a short usage summary and exits non-zero.
 
 ## Graceful shutdown
 
