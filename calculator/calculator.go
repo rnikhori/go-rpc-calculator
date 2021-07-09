@@ -9,10 +9,15 @@ import (
 )
 
 var (
-	ErrDivideByZero = errors.New("division by zero")
-	ErrNegativeSqrt = errors.New("square root of negative number")
-	ErrModuloByZero = errors.New("modulo by zero")
+	ErrDivideByZero   = errors.New("division by zero")
+	ErrNegativeSqrt   = errors.New("square root of negative number")
+	ErrModuloByZero   = errors.New("modulo by zero")
+	ErrInvalidOperand = errors.New("operand must be a finite number (not NaN or Inf)")
 )
+
+func invalidOperand(x float64) bool {
+	return math.IsNaN(x) || math.IsInf(x, 0)
+}
 
 const defaultMaxHistory = 100
 
@@ -113,24 +118,40 @@ func (c *Calculator) Stats(args struct{}, reply *Stats) error {
 }
 
 func (c *Calculator) Add(args Args, reply *float64) error {
+	if invalidOperand(args.A) || invalidOperand(args.B) {
+		c.recordHistory("Add", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	*reply = args.A + args.B
 	c.recordHistory("Add", args.A, args.B, *reply, nil)
 	return nil
 }
 
 func (c *Calculator) Subtract(args Args, reply *float64) error {
+	if invalidOperand(args.A) || invalidOperand(args.B) {
+		c.recordHistory("Subtract", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	*reply = args.A - args.B
 	c.recordHistory("Subtract", args.A, args.B, *reply, nil)
 	return nil
 }
 
 func (c *Calculator) Multiply(args Args, reply *float64) error {
+	if invalidOperand(args.A) || invalidOperand(args.B) {
+		c.recordHistory("Multiply", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	*reply = args.A * args.B
 	c.recordHistory("Multiply", args.A, args.B, *reply, nil)
 	return nil
 }
 
 func (c *Calculator) Divide(args Args, reply *float64) error {
+	if invalidOperand(args.A) || invalidOperand(args.B) {
+		c.recordHistory("Divide", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	if args.B == 0 {
 		c.recordHistory("Divide", args.A, args.B, 0, ErrDivideByZero)
 		return ErrDivideByZero
@@ -141,12 +162,20 @@ func (c *Calculator) Divide(args Args, reply *float64) error {
 }
 
 func (c *Calculator) Power(args Args, reply *float64) error {
+	if invalidOperand(args.A) || invalidOperand(args.B) {
+		c.recordHistory("Power", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	*reply = math.Pow(args.A, args.B)
 	c.recordHistory("Power", args.A, args.B, *reply, nil)
 	return nil
 }
 
 func (c *Calculator) Sqrt(args Args, reply *float64) error {
+	if invalidOperand(args.A) {
+		c.recordHistory("Sqrt", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	if args.A < 0 {
 		c.recordHistory("Sqrt", args.A, args.B, 0, ErrNegativeSqrt)
 		return ErrNegativeSqrt
@@ -157,6 +186,10 @@ func (c *Calculator) Sqrt(args Args, reply *float64) error {
 }
 
 func (c *Calculator) Modulo(args Args, reply *float64) error {
+	if invalidOperand(args.A) || invalidOperand(args.B) {
+		c.recordHistory("Modulo", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	if args.B == 0 {
 		c.recordHistory("Modulo", args.A, args.B, 0, ErrModuloByZero)
 		return ErrModuloByZero
@@ -167,6 +200,10 @@ func (c *Calculator) Modulo(args Args, reply *float64) error {
 }
 
 func (c *Calculator) Negate(args Args, reply *float64) error {
+	if invalidOperand(args.A) {
+		c.recordHistory("Negate", args.A, args.B, 0, ErrInvalidOperand)
+		return ErrInvalidOperand
+	}
 	*reply = -args.A
 	c.recordHistory("Negate", args.A, args.B, *reply, nil)
 	return nil
