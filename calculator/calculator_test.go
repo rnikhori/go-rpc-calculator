@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"log"
+	"math"
 	"strings"
 	"sync"
 	"testing"
@@ -181,6 +182,33 @@ func TestHistoryTrimsToMaxSize(t *testing.T) {
 	}
 	if history[0].A != 7 || history[2].A != 9 {
 		t.Errorf("history = %+v, want the 3 most recent entries", history)
+	}
+}
+
+func TestInvalidOperandsRejected(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+
+	cases := []struct {
+		name string
+		call func() error
+	}{
+		{"Add NaN", func() error { return c.Add(Args{A: math.NaN(), B: 1}, &reply) }},
+		{"Subtract +Inf", func() error { return c.Subtract(Args{A: math.Inf(1), B: 1}, &reply) }},
+		{"Multiply -Inf", func() error { return c.Multiply(Args{A: 1, B: math.Inf(-1)}, &reply) }},
+		{"Divide NaN", func() error { return c.Divide(Args{A: math.NaN(), B: 1}, &reply) }},
+		{"Power Inf", func() error { return c.Power(Args{A: 2, B: math.Inf(1)}, &reply) }},
+		{"Sqrt NaN", func() error { return c.Sqrt(Args{A: math.NaN()}, &reply) }},
+		{"Modulo Inf", func() error { return c.Modulo(Args{A: 1, B: math.Inf(1)}, &reply) }},
+		{"Negate NaN", func() error { return c.Negate(Args{A: math.NaN()}, &reply) }},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.call(); !errors.Is(err, ErrInvalidOperand) {
+				t.Errorf("error = %v, want ErrInvalidOperand", err)
+			}
+		})
 	}
 }
 
