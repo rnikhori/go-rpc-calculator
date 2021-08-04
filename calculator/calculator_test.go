@@ -167,7 +167,7 @@ func TestGetHistoryRespectsLimit(t *testing.T) {
 }
 
 func TestHistoryTrimsToMaxSize(t *testing.T) {
-	c := &Calculator{maxHistory: 3}
+	c := &Calculator{hist: opHistory{max: 3}}
 	var reply float64
 	for i := 0; i < 10; i++ {
 		_ = c.Add(Args{A: float64(i), B: 0}, &reply)

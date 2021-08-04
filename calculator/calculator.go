@@ -44,16 +44,48 @@ type Stats struct {
 	Total  uint64
 }
 
+type opHistory struct {
+	mu      sync.Mutex
+	max     int
+	entries []HistoryEntry
+}
+
+func (h *opHistory) add(entry HistoryEntry) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	max := h.max
+	if max <= 0 {
+		max = defaultMaxHistory
+	}
+	h.entries = append(h.entries, entry)
+	if len(h.entries) > max {
+		h.entries = h.entries[len(h.entries)-max:]
+	}
+}
+
+func (h *opHistory) recent(limit int) []HistoryEntry {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	n := len(h.entries)
+	if limit <= 0 || limit > n {
+		limit = n
+	}
+	result := make([]HistoryEntry, limit)
+	copy(result, h.entries[n-limit:])
+	return result
+}
+
 type Calculator struct {
-	mu         sync.Mutex
-	history    []HistoryEntry
-	maxHistory int
-	opCounts   map[string]uint64
-	logger     *log.Logger
+	hist     opHistory
+	statsMu  sync.Mutex
+	opCounts map[string]uint64
+	logger   *log.Logger
 }
 
 func NewCalculator(logger *log.Logger, maxHistory int) *Calculator {
-	return &Calculator{logger: logger, maxHistory: maxHistory}
+	return &Calculator{logger: logger, hist: opHistory{max: maxHistory}}
 }
 
 func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
@@ -61,23 +93,14 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 	if err != nil {
 		entry.Err = err.Error()
 	}
+	c.hist.add(entry)
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	max := c.maxHistory
-	if max <= 0 {
-		max = defaultMaxHistory
-	}
-	c.history = append(c.history, entry)
-	if len(c.history) > max {
-		c.history = c.history[len(c.history)-max:]
-	}
-
+	c.statsMu.Lock()
 	if c.opCounts == nil {
 		c.opCounts = make(map[string]uint64)
 	}
 	c.opCounts[op]++
+	c.statsMu.Unlock()
 
 	if c.logger != nil {
 		if err != nil {
@@ -89,23 +112,13 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 }
 
 func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	n := len(c.history)
-	limit := args.Limit
-	if limit <= 0 || limit > n {
-		limit = n
-	}
-	result := make([]HistoryEntry, limit)
-	copy(result, c.history[n-limit:])
-	*reply = result
+	*reply = c.hist.recent(args.Limit)
 	return nil
 }
 
 func (c *Calculator) Stats(args struct{}, reply *Stats) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.statsMu.Lock()
+	defer c.statsMu.Unlock()
 
 	counts := make(map[string]uint64, len(c.opCounts))
 	var total uint64
