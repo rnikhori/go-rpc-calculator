@@ -13,6 +13,7 @@ var (
 	ErrNegativeSqrt   = errors.New("square root of negative number")
 	ErrModuloByZero   = errors.New("modulo by zero")
 	ErrInvalidOperand = errors.New("operand must be a finite number (not NaN or Inf)")
+	ErrInvalidLimit   = errors.New("history limit must not be negative")
 )
 
 func invalidOperand(x float64) bool {
@@ -112,6 +113,9 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 }
 
 func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
+	if args.Limit < 0 {
+		return ErrInvalidLimit
+	}
 	*reply = c.hist.recent(args.Limit)
 	return nil
 }

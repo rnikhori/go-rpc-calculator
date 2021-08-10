@@ -166,6 +166,15 @@ func TestGetHistoryRespectsLimit(t *testing.T) {
 	}
 }
 
+func TestGetHistoryRejectsNegativeLimit(t *testing.T) {
+	c := &Calculator{}
+	var history []HistoryEntry
+	err := c.GetHistory(HistoryArgs{Limit: -1}, &history)
+	if !errors.Is(err, ErrInvalidLimit) {
+		t.Fatalf("GetHistory(Limit: -1) error = %v, want ErrInvalidLimit", err)
+	}
+}
+
 func TestHistoryTrimsToMaxSize(t *testing.T) {
 	c := &Calculator{hist: opHistory{max: 3}}
 	var reply float64
