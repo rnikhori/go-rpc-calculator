@@ -25,7 +25,7 @@ The server keeps a running, concurrency-safe count of how many times each operat
 
 ## History
 
-Every call to an arithmetic method is recorded as a `calculator.HistoryEntry` (operation name, operands, result, error if any, and timestamp). The server keeps the most recent entries, up to a fixed size, and discards older ones once that size is exceeded. Call `Calculator.GetHistory` with a `calculator.HistoryArgs{Limit: n}` to retrieve up to `n` of the most recent entries.
+Every call to an arithmetic method is recorded as a `calculator.HistoryEntry` (operation name, operands, result, error if any, and timestamp). The server keeps the most recent entries, up to a fixed size, and discards older ones once that size is exceeded. Call `Calculator.GetHistory` with a `calculator.HistoryArgs{Limit: n}` to retrieve up to `n` of the most recent entries; `Limit` of 0 returns everything retained, and a negative `Limit` returns `ErrInvalidLimit`.
 
 ## Build
 
