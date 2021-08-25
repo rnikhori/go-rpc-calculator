@@ -20,9 +20,10 @@ const defaultMaxHistory = 100
 func main() {
 	host := flag.String("host", "", "host/interface to listen on (empty means all interfaces)")
 	port := flag.Int("port", 1234, "port to listen on")
+	maxHistory := flag.Int("max-history", defaultMaxHistory, "number of recent operations to retain for GetHistory")
 	flag.Parse()
 
-	calc := calculator.NewCalculator(log.Default(), defaultMaxHistory)
+	calc := calculator.NewCalculator(log.Default(), *maxHistory)
 	if err := rpc.Register(calc); err != nil {
 		log.Fatal("register error:", err)
 	}
