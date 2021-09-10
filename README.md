@@ -73,6 +73,7 @@ The server stops accepting new connections on SIGINT (Ctrl+C) or SIGTERM, closes
 |---------|-----------------|-------------|----------------------------------|
 | `-host` | server, client  | `` (server, all interfaces) / `localhost` (client) | host/interface to bind or connect to |
 | `-port` | server, client  | `1234`      | TCP port to listen on or connect to |
+| `-max-history` | server  | `100`       | number of recent operations retained for `GetHistory` |
 
 Example running both on a non-default port:
 
