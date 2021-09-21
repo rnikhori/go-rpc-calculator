@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/rpc"
 	"strconv"
 	"strings"
@@ -26,16 +27,21 @@ var unaryOps = map[string]string{
 	"negate": "Calculator.Negate",
 }
 
+var callTimeout time.Duration
+
 func main() {
 	host := flag.String("host", "localhost", "server host to connect to")
 	port := flag.Int("port", 1234, "server port to connect to")
+	timeout := flag.Duration("timeout", 5*time.Second, "timeout for dialing and for each RPC call")
 	flag.Parse()
+	callTimeout = *timeout
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
-	client, err := rpc.Dial("tcp", addr)
+	addr := net.JoinHostPort(*host, strconv.Itoa(*port))
+	conn, err := net.DialTimeout("tcp", addr, callTimeout)
 	if err != nil {
 		log.Fatal("dial error:", err)
 	}
+	client := rpc.NewClient(conn)
 	defer client.Close()
 
 	rest := flag.Args()
@@ -62,9 +68,19 @@ func main() {
 	}
 }
 
+func callRPC(client *rpc.Client, method string, args, reply any) error {
+	call := client.Go(method, args, reply, nil)
+	select {
+	case res := <-call.Done:
+		return res.Error
+	case <-time.After(callTimeout):
+		return fmt.Errorf("rpc call %s timed out after %s", method, callTimeout)
+	}
+}
+
 func runStats(client *rpc.Client) error {
 	var stats calculator.Stats
-	if err := client.Call("Calculator.Stats", struct{}{}, &stats); err != nil {
+	if err := callRPC(client, "Calculator.Stats", struct{}{}, &stats); err != nil {
 		return fmt.Errorf("stats error: %w", err)
 	}
 
@@ -86,7 +102,7 @@ func runHistory(client *rpc.Client, args []string) error {
 	}
 
 	var history []calculator.HistoryEntry
-	if err := client.Call("Calculator.GetHistory", calculator.HistoryArgs{Limit: limit}, &history); err != nil {
+	if err := callRPC(client, "Calculator.GetHistory", calculator.HistoryArgs{Limit: limit}, &history); err != nil {
 		return fmt.Errorf("history error: %w", err)
 	}
 
@@ -140,7 +156,7 @@ func runOp(client *rpc.Client, args []string) error {
 
 func callAndPrint(client *rpc.Client, method, op string, args calculator.Args) error {
 	var reply float64
-	if err := client.Call(method, args, &reply); err != nil {
+	if err := callRPC(client, method, args, &reply); err != nil {
 		return fmt.Errorf("%s error: %w", op, err)
 	}
 	fmt.Println(reply)
@@ -155,25 +171,25 @@ func runDemo(client *rpc.Client) {
 	args := calculator.Args{A: 10, B: 3}
 
 	var sum float64
-	if err := client.Call("Calculator.Add", args, &sum); err != nil {
+	if err := callRPC(client, "Calculator.Add", args, &sum); err != nil {
 		log.Fatal("Add error:", err)
 	}
 	log.Printf("%.2f + %.2f = %.2f\n", args.A, args.B, sum)
 
 	var diff float64
-	if err := client.Call("Calculator.Subtract", args, &diff); err != nil {
+	if err := callRPC(client, "Calculator.Subtract", args, &diff); err != nil {
 		log.Fatal("Subtract error:", err)
 	}
 	log.Printf("%.2f - %.2f = %.2f\n", args.A, args.B, diff)
 
 	var product float64
-	if err := client.Call("Calculator.Multiply", args, &product); err != nil {
+	if err := callRPC(client, "Calculator.Multiply", args, &product); err != nil {
 		log.Fatal("Multiply error:", err)
 	}
 	log.Printf("%.2f * %.2f = %.2f\n", args.A, args.B, product)
 
 	var quotient float64
-	if err := client.Call("Calculator.Divide", args, &quotient); err != nil {
+	if err := callRPC(client, "Calculator.Divide", args, &quotient); err != nil {
 		log.Fatal("Divide error:", err)
 	}
 	log.Printf("%.2f / %.2f = %.2f\n", args.A, args.B, quotient)
