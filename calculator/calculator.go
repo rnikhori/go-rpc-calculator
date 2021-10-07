@@ -202,6 +202,9 @@ func (c *Calculator) Sqrt(args Args, reply *float64) error {
 	return nil
 }
 
+// Modulo returns the remainder of A/B using math.Mod, which takes the sign
+// of the dividend A (matching Go's % operator and C's fmod), not the sign
+// of the divisor B as in some languages (e.g. Python's %).
 func (c *Calculator) Modulo(args Args, reply *float64) error {
 	if invalidOperand(args.A) || invalidOperand(args.B) {
 		c.recordHistory("Modulo", args.A, args.B, 0, ErrInvalidOperand)

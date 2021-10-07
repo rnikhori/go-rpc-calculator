@@ -96,6 +96,25 @@ func TestModulo(t *testing.T) {
 	}
 }
 
+func TestModuloSignFollowsDividend(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+
+	if err := c.Modulo(Args{A: -7, B: 3}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != -1 {
+		t.Errorf("Modulo(-7, 3) = %v, want -1 (sign follows dividend)", reply)
+	}
+
+	if err := c.Modulo(Args{A: 7, B: -3}, &reply); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if reply != 1 {
+		t.Errorf("Modulo(7, -3) = %v, want 1 (sign follows dividend)", reply)
+	}
+}
+
 func TestModuloByZero(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
