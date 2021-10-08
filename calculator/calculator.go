@@ -1,3 +1,6 @@
+// Package calculator implements a Calculator type exposing basic arithmetic
+// operations as net/rpc methods, along with per-operation history tracking
+// and call-count statistics.
 package calculator
 
 import (
@@ -9,11 +12,17 @@ import (
 )
 
 var (
-	ErrDivideByZero   = errors.New("division by zero")
-	ErrNegativeSqrt   = errors.New("square root of negative number")
-	ErrModuloByZero   = errors.New("modulo by zero")
+	// ErrDivideByZero is returned by Divide when B is zero.
+	ErrDivideByZero = errors.New("division by zero")
+	// ErrNegativeSqrt is returned by Sqrt when A is negative.
+	ErrNegativeSqrt = errors.New("square root of negative number")
+	// ErrModuloByZero is returned by Modulo when B is zero.
+	ErrModuloByZero = errors.New("modulo by zero")
+	// ErrInvalidOperand is returned by any operation when an operand is
+	// NaN or infinite.
 	ErrInvalidOperand = errors.New("operand must be a finite number (not NaN or Inf)")
-	ErrInvalidLimit   = errors.New("history limit must not be negative")
+	// ErrInvalidLimit is returned by GetHistory when Limit is negative.
+	ErrInvalidLimit = errors.New("history limit must not be negative")
 )
 
 func invalidOperand(x float64) bool {
@@ -22,11 +31,16 @@ func invalidOperand(x float64) bool {
 
 const defaultMaxHistory = 100
 
+// Args holds the operands for a binary operation. Unary operations (Sqrt,
+// Negate) only use A and ignore B.
 type Args struct {
 	A float64
 	B float64
 }
 
+// HistoryEntry records a single call to an arithmetic operation: which
+// operation ran, its operands, the result (if it succeeded), the error
+// message (if it failed), and when it happened.
 type HistoryEntry struct {
 	Op     string
 	A      float64
@@ -36,10 +50,14 @@ type HistoryEntry struct {
 	Time   time.Time
 }
 
+// HistoryArgs are the arguments to GetHistory. A Limit of zero returns
+// every retained entry; a negative Limit is an error (ErrInvalidLimit).
 type HistoryArgs struct {
 	Limit int
 }
 
+// Stats is a snapshot of operation call counts returned by the Stats RPC
+// method.
 type Stats struct {
 	Counts map[string]uint64
 	Total  uint64
@@ -78,6 +96,9 @@ func (h *opHistory) recent(limit int) []HistoryEntry {
 	return result
 }
 
+// Calculator implements the Calculator RPC service: basic arithmetic
+// operations plus history and stats tracking. Its zero value is a usable,
+// unlogged calculator with the default history size.
 type Calculator struct {
 	hist     opHistory
 	statsMu  sync.Mutex
@@ -85,6 +106,9 @@ type Calculator struct {
 	logger   *log.Logger
 }
 
+// NewCalculator builds a Calculator that logs each operation to logger (if
+// non-nil) and retains up to maxHistory recent operations for GetHistory
+// (defaultMaxHistory if maxHistory <= 0).
 func NewCalculator(logger *log.Logger, maxHistory int) *Calculator {
 	return &Calculator{logger: logger, hist: opHistory{max: maxHistory}}
 }
@@ -112,6 +136,8 @@ func (c *Calculator) recordHistory(op string, a, b, result float64, err error) {
 	}
 }
 
+// GetHistory returns the most recent args.Limit operations recorded (or
+// everything retained if args.Limit is 0), oldest first.
 func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
 	if args.Limit < 0 {
 		return ErrInvalidLimit
@@ -120,6 +146,8 @@ func (c *Calculator) GetHistory(args HistoryArgs, reply *[]HistoryEntry) error {
 	return nil
 }
 
+// Stats returns a snapshot of how many times each operation has been
+// called, and the total across all operations.
 func (c *Calculator) Stats(args struct{}, reply *Stats) error {
 	c.statsMu.Lock()
 	defer c.statsMu.Unlock()
@@ -134,6 +162,7 @@ func (c *Calculator) Stats(args struct{}, reply *Stats) error {
 	return nil
 }
 
+// Add returns A + B.
 func (c *Calculator) Add(args Args, reply *float64) error {
 	if invalidOperand(args.A) || invalidOperand(args.B) {
 		c.recordHistory("Add", args.A, args.B, 0, ErrInvalidOperand)
@@ -144,6 +173,7 @@ func (c *Calculator) Add(args Args, reply *float64) error {
 	return nil
 }
 
+// Subtract returns A - B.
 func (c *Calculator) Subtract(args Args, reply *float64) error {
 	if invalidOperand(args.A) || invalidOperand(args.B) {
 		c.recordHistory("Subtract", args.A, args.B, 0, ErrInvalidOperand)
@@ -154,6 +184,7 @@ func (c *Calculator) Subtract(args Args, reply *float64) error {
 	return nil
 }
 
+// Multiply returns A * B.
 func (c *Calculator) Multiply(args Args, reply *float64) error {
 	if invalidOperand(args.A) || invalidOperand(args.B) {
 		c.recordHistory("Multiply", args.A, args.B, 0, ErrInvalidOperand)
@@ -164,6 +195,7 @@ func (c *Calculator) Multiply(args Args, reply *float64) error {
 	return nil
 }
 
+// Divide returns A / B, or ErrDivideByZero if B is zero.
 func (c *Calculator) Divide(args Args, reply *float64) error {
 	if invalidOperand(args.A) || invalidOperand(args.B) {
 		c.recordHistory("Divide", args.A, args.B, 0, ErrInvalidOperand)
@@ -178,6 +210,7 @@ func (c *Calculator) Divide(args Args, reply *float64) error {
 	return nil
 }
 
+// Power returns A raised to the power of B.
 func (c *Calculator) Power(args Args, reply *float64) error {
 	if invalidOperand(args.A) || invalidOperand(args.B) {
 		c.recordHistory("Power", args.A, args.B, 0, ErrInvalidOperand)
@@ -188,6 +221,8 @@ func (c *Calculator) Power(args Args, reply *float64) error {
 	return nil
 }
 
+// Sqrt returns the square root of A, or ErrNegativeSqrt if A is negative.
+// B is ignored.
 func (c *Calculator) Sqrt(args Args, reply *float64) error {
 	if invalidOperand(args.A) {
 		c.recordHistory("Sqrt", args.A, args.B, 0, ErrInvalidOperand)
@@ -219,6 +254,7 @@ func (c *Calculator) Modulo(args Args, reply *float64) error {
 	return nil
 }
 
+// Negate returns -A. B is ignored.
 func (c *Calculator) Negate(args Args, reply *float64) error {
 	if invalidOperand(args.A) {
 		c.recordHistory("Negate", args.A, args.B, 0, ErrInvalidOperand)
