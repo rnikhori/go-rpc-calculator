@@ -75,6 +75,7 @@ The server stops accepting new connections on SIGINT (Ctrl+C) or SIGTERM, closes
 | `-port` | server, client  | `1234`      | TCP port to listen on or connect to |
 | `-max-history` | server  | `100`       | number of recent operations retained for `GetHistory` |
 | `-timeout` | client      | `5s`        | timeout for dialing the server and for each RPC call   |
+| `-verbose` | server      | `false`     | log each connection's remote address on accept and close |
 
 Example running both on a non-default port:
 
