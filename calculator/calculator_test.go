@@ -166,6 +166,33 @@ func TestGetHistoryRecordsOperations(t *testing.T) {
 	}
 }
 
+func TestHistoryRecordsEveryErrorKind(t *testing.T) {
+	c := &Calculator{}
+	var reply float64
+
+	_ = c.Sqrt(Args{A: -9}, &reply)
+	_ = c.Modulo(Args{A: 1, B: 0}, &reply)
+	_ = c.Add(Args{A: math.NaN(), B: 1}, &reply)
+
+	var history []HistoryEntry
+	if err := c.GetHistory(HistoryArgs{}, &history); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(history) != 3 {
+		t.Fatalf("len(history) = %d, want 3", len(history))
+	}
+
+	wantErrs := []string{ErrNegativeSqrt.Error(), ErrModuloByZero.Error(), ErrInvalidOperand.Error()}
+	for i, want := range wantErrs {
+		if history[i].Err != want {
+			t.Errorf("history[%d].Err = %q, want %q", i, history[i].Err, want)
+		}
+		if history[i].Result != 0 {
+			t.Errorf("history[%d].Result = %v, want 0 for a failed call", i, history[i].Result)
+		}
+	}
+}
+
 func TestGetHistoryRespectsLimit(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
