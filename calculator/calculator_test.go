@@ -351,6 +351,15 @@ func BenchmarkMultiply(b *testing.B) {
 	}
 }
 
+func BenchmarkSqrt(b *testing.B) {
+	c := &Calculator{}
+	var reply float64
+	args := Args{A: 2}
+	for i := 0; i < b.N; i++ {
+		_ = c.Sqrt(args, &reply)
+	}
+}
+
 func TestDivideByZero(t *testing.T) {
 	c := &Calculator{}
 	var reply float64
