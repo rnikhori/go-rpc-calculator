@@ -125,11 +125,11 @@ func runOp(client *rpc.Client, args []string) error {
 
 	if method, ok := unaryOps[op]; ok {
 		if len(args) != 2 {
-			return fmt.Errorf("usage: client %s <a>", op)
+			return fmt.Errorf("usage: client %s <a> (got %d operand(s))", op, len(args)-1)
 		}
-		a, err := strconv.ParseFloat(args[1], 64)
+		a, err := parseOperand(args[1])
 		if err != nil {
-			return fmt.Errorf("invalid operand %q: %w", args[1], err)
+			return err
 		}
 		return callAndPrint(client, method, op, calculator.Args{A: a})
 	}
@@ -139,19 +139,27 @@ func runOp(client *rpc.Client, args []string) error {
 		return fmt.Errorf("unknown operation %q\n%s", args[0], usage())
 	}
 	if len(args) != 3 {
-		return fmt.Errorf("usage: client %s <a> <b>", op)
+		return fmt.Errorf("usage: client %s <a> <b> (got %d operand(s))", op, len(args)-1)
 	}
 
-	a, err := strconv.ParseFloat(args[1], 64)
+	a, err := parseOperand(args[1])
 	if err != nil {
-		return fmt.Errorf("invalid operand %q: %w", args[1], err)
+		return err
 	}
-	b, err := strconv.ParseFloat(args[2], 64)
+	b, err := parseOperand(args[2])
 	if err != nil {
-		return fmt.Errorf("invalid operand %q: %w", args[2], err)
+		return err
 	}
 
 	return callAndPrint(client, method, op, calculator.Args{A: a, B: b})
+}
+
+func parseOperand(s string) (float64, error) {
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid operand %q: not a number", s)
+	}
+	return v, nil
 }
 
 func callAndPrint(client *rpc.Client, method, op string, args calculator.Args) error {
