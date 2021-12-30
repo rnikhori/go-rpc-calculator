@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"net/rpc"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 
@@ -29,7 +29,7 @@ func main() {
 		log.Fatal("register error:", err)
 	}
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
+	addr := net.JoinHostPort(*host, strconv.Itoa(*port))
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal("listen error:", err)
